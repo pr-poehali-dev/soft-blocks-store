@@ -3,6 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Separator } from '@/components/ui/separator';
 import Icon from '@/components/ui/icon';
 
 interface Product {
@@ -16,6 +18,7 @@ interface Product {
 
 const Index = () => {
   const [cart, setCart] = useState<number[]>([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
 
   const products: Product[] = [
     {
@@ -72,6 +75,26 @@ const Index = () => {
     setCart([...cart, productId]);
   };
 
+  const removeFromCart = (index: number) => {
+    const newCart = [...cart];
+    newCart.splice(index, 1);
+    setCart(newCart);
+  };
+
+  const getCartItems = () => {
+    return cart.map((productId, index) => {
+      const product = products.find(p => p.id === productId);
+      return { ...product, cartIndex: index };
+    });
+  };
+
+  const getTotalPrice = () => {
+    return cart.reduce((total, productId) => {
+      const product = products.find(p => p.id === productId);
+      return total + (product?.price || 0);
+    }, 0);
+  };
+
   const scrollToSection = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -92,14 +115,89 @@ const Index = () => {
             <button onClick={() => scrollToSection('reviews')} className="hover:text-primary transition-colors font-semibold">Отзывы</button>
             <button onClick={() => scrollToSection('contacts')} className="hover:text-primary transition-colors font-semibold">Контакты</button>
           </div>
-          <Button className="relative">
-            <Icon name="ShoppingCart" size={20} />
-            {cart.length > 0 && (
-              <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 bg-secondary">
-                {cart.length}
-              </Badge>
-            )}
-          </Button>
+          <Sheet open={isCartOpen} onOpenChange={setIsCartOpen}>
+            <SheetTrigger asChild>
+              <Button className="relative">
+                <Icon name="ShoppingCart" size={20} />
+                {cart.length > 0 && (
+                  <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 bg-secondary">
+                    {cart.length}
+                  </Badge>
+                )}
+              </Button>
+            </SheetTrigger>
+            <SheetContent className="w-full sm:max-w-lg">
+              <SheetHeader>
+                <SheetTitle className="text-2xl flex items-center gap-2">
+                  <span className="text-3xl">🛒</span>
+                  Ваша корзина
+                </SheetTitle>
+                <SheetDescription>
+                  {cart.length === 0 ? 'Корзина пуста' : `Товаров в корзине: ${cart.length}`}
+                </SheetDescription>
+              </SheetHeader>
+              <div className="mt-8 space-y-4">
+                {cart.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="text-6xl mb-4">🧊</div>
+                    <p className="text-lg text-muted-foreground">Добавьте кубики в корзину</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="space-y-4 max-h-[60vh] overflow-y-auto">
+                      {getCartItems().map((item) => (
+                        <Card key={item.cartIndex} className="border-2">
+                          <CardContent className="p-4">
+                            <div className="flex gap-4">
+                              <img
+                                src={item.image}
+                                alt={item.name}
+                                className="w-20 h-20 rounded-lg object-cover"
+                              />
+                              <div className="flex-1">
+                                <h3 className="font-semibold text-lg">{item.name}</h3>
+                                <p className="text-sm text-muted-foreground">{item.size}</p>
+                                <p className="text-lg font-bold text-primary mt-1">
+                                  {item.price?.toLocaleString()} ₽
+                                </p>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => removeFromCart(item.cartIndex!)}
+                                className="hover:bg-destructive/10 hover:text-destructive"
+                              >
+                                <Icon name="Trash2" size={20} />
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                    <Separator className="my-4" />
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center text-xl font-bold">
+                        <span>Итого:</span>
+                        <span className="text-primary">{getTotalPrice().toLocaleString()} ₽</span>
+                      </div>
+                      <Button className="w-full text-lg" size="lg">
+                        <Icon name="CreditCard" className="mr-2" size={20} />
+                        Оформить заказ
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="w-full text-lg"
+                        size="lg"
+                        onClick={() => setIsCartOpen(false)}
+                      >
+                        Продолжить покупки
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </SheetContent>
+          </Sheet>
         </nav>
       </header>
 
