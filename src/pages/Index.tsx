@@ -4,6 +4,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import Icon from '@/components/ui/icon';
 
@@ -19,6 +23,15 @@ interface Product {
 const Index = () => {
   const [cart, setCart] = useState<number[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [orderSuccess, setOrderSuccess] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    phone: '',
+    email: '',
+    address: '',
+    comment: ''
+  });
 
   const products: Product[] = [
     {
@@ -93,6 +106,26 @@ const Index = () => {
       const product = products.find(p => p.id === productId);
       return total + (product?.price || 0);
     }, 0);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleCheckout = () => {
+    setIsCartOpen(false);
+    setIsCheckoutOpen(true);
+  };
+
+  const handleSubmitOrder = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsCheckoutOpen(false);
+    setOrderSuccess(true);
+    setTimeout(() => {
+      setOrderSuccess(false);
+      setCart([]);
+      setFormData({ name: '', phone: '', email: '', address: '', comment: '' });
+    }, 3000);
   };
 
   const scrollToSection = (id: string) => {
@@ -180,7 +213,7 @@ const Index = () => {
                         <span>Итого:</span>
                         <span className="text-primary">{getTotalPrice().toLocaleString()} ₽</span>
                       </div>
-                      <Button className="w-full text-lg" size="lg">
+                      <Button className="w-full text-lg" size="lg" onClick={handleCheckout}>
                         <Icon name="CreditCard" className="mr-2" size={20} />
                         Оформить заказ
                       </Button>
@@ -516,6 +549,132 @@ const Index = () => {
           <p className="opacity-80">© 2024 КубикиДетям. Все права защищены.</p>
         </div>
       </footer>
+
+      <Dialog open={isCheckoutOpen} onOpenChange={setIsCheckoutOpen}>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-3xl flex items-center gap-2">
+              <span className="text-3xl">📝</span>
+              Оформление заказа
+            </DialogTitle>
+            <DialogDescription className="text-base">
+              Заполните форму, и мы свяжемся с вами для подтверждения
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSubmitOrder} className="space-y-6 mt-4">
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="name" className="text-base font-semibold">Имя *</Label>
+                <Input
+                  id="name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  placeholder="Введите ваше имя"
+                  className="mt-2 text-base"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="phone" className="text-base font-semibold">Телефон *</Label>
+                <Input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  placeholder="+7 (999) 123-45-67"
+                  className="mt-2 text-base"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="email" className="text-base font-semibold">Email</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  placeholder="example@mail.ru"
+                  className="mt-2 text-base"
+                />
+              </div>
+              <div>
+                <Label htmlFor="address" className="text-base font-semibold">Адрес доставки *</Label>
+                <Textarea
+                  id="address"
+                  name="address"
+                  value={formData.address}
+                  onChange={handleInputChange}
+                  placeholder="Город, улица, дом, квартира"
+                  className="mt-2 text-base min-h-20"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="comment" className="text-base font-semibold">Комментарий к заказу</Label>
+                <Textarea
+                  id="comment"
+                  name="comment"
+                  value={formData.comment}
+                  onChange={handleInputChange}
+                  placeholder="Укажите желаемое время доставки или другие пожелания"
+                  className="mt-2 text-base min-h-20"
+                />
+              </div>
+            </div>
+            <Separator />
+            <div className="bg-accent/20 p-4 rounded-lg">
+              <h3 className="font-semibold text-lg mb-3">Ваш заказ:</h3>
+              <div className="space-y-2 mb-3">
+                {getCartItems().map((item) => (
+                  <div key={item.cartIndex} className="flex justify-between text-sm">
+                    <span>{item.name}</span>
+                    <span className="font-semibold">{item.price?.toLocaleString()} ₽</span>
+                  </div>
+                ))}
+              </div>
+              <Separator className="my-3" />
+              <div className="flex justify-between items-center text-xl font-bold">
+                <span>Итого:</span>
+                <span className="text-primary">{getTotalPrice().toLocaleString()} ₽</span>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <Button type="submit" className="flex-1 text-lg" size="lg">
+                <Icon name="Check" className="mr-2" size={20} />
+                Подтвердить заказ
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsCheckoutOpen(false)}
+                className="flex-1 text-lg"
+                size="lg"
+              >
+                Отмена
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={orderSuccess} onOpenChange={setOrderSuccess}>
+        <DialogContent className="sm:max-w-md">
+          <div className="text-center py-6 space-y-4">
+            <div className="text-7xl animate-bounce-subtle">🎉</div>
+            <DialogTitle className="text-3xl">Заказ оформлен!</DialogTitle>
+            <DialogDescription className="text-lg">
+              Спасибо за заказ! Мы свяжемся с вами в ближайшее время для подтверждения.
+            </DialogDescription>
+            <div className="flex items-center justify-center gap-2 text-primary">
+              <Icon name="Phone" size={24} />
+              <span className="text-lg font-semibold">+7 (999) 123-45-67</span>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
